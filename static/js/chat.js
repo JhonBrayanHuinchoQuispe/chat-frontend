@@ -95,12 +95,7 @@ function agregarMensaje(msg, autoScroll = true) {
         div.className = 'mensaje usuario-2';
     }
     
-    const fecha = new Date(msg.timestamp);
-    const tiempo = fecha.toLocaleTimeString('es-PE', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
+    const tiempo = msg.timestamp;
     
     div.innerHTML = `
         <div class="contenido-mensaje-wrapper">
