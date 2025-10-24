@@ -1,18 +1,14 @@
-// Configuración de la API - URL del backend en Render
-const API_BASE_URL = 'https://chat-backend-6odp.onrender.com'; // URL de tu backend en Render
+const API_BASE_URL = 'https://chat-backend-6odp.onrender.com';
 
 let usuariosColores = {};
 let contadorUsuarios = 0;
 
-// Variables de Pusher
 let pusher = null;
 let channel = null;
 let pusherEnabled = false;
 
-// Inicializar Pusher
 async function initializePusher() {
     try {
-        // Obtener configuración de Pusher del backend
         const response = await fetch(`${API_BASE_URL}/api/pusher/config`);
         const config = await response.json();
         
@@ -28,56 +24,53 @@ async function initializePusher() {
             });
 
             pusherEnabled = true;
-            console.log('✅ Pusher conectado exitosamente');
         } else {
-            console.log('⚠️ Pusher no está habilitado en el servidor');
             pusherEnabled = false;
         }
     } catch (error) {
-        console.error('❌ Error al conectar con Pusher:', error);
         pusherEnabled = false;
     }
     
-    // Si Pusher no está habilitado o falló, usar polling
+    // usar polling si pusher no funciona
     if (!pusherEnabled) {
-        console.log('📡 Usando modo polling para actualizaciones');
         cargarMensajes();
-        setInterval(cargarMensajes, 3000);
+        setInterval(cargarMensajes, 5000);
     } else {
-        // Cargar mensajes iniciales
         cargarMensajes();
     }
 }
+
+let ultimoMensajeCount = 0;
 
 function cargarMensajes() {
     fetch(`${API_BASE_URL}/api/messages`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
-                console.error('Error:', data.error);
                 return;
             }
             
             const container = document.getElementById('mensajes');
             if (!container) return;
             
-            container.innerHTML = '';
-            
-            if (data.messages && data.messages.length > 0) {
-                data.messages.forEach(msg => {
-                    agregarMensaje(msg, false); // false = no hacer scroll automático
-                });
-                container.scrollTop = container.scrollHeight;
-            } else {
-                container.innerHTML = '<div class="sin-mensajes">No hay mensajes aún</div>';
+            if (data.messages && data.messages.length !== ultimoMensajeCount) {
+                container.innerHTML = '';
+                ultimoMensajeCount = data.messages.length;
+                
+                if (data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        agregarMensaje(msg, false);
+                    });
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    container.innerHTML = '<div class="sin-mensajes">No hay mensajes aún</div>';
+                }
             }
         })
         .catch(error => {
-            console.error('Error de conexión:', error);
-            // Mostrar mensaje de error en el chat
             const container = document.getElementById('mensajes');
             if (container) {
-                container.innerHTML = '<div class="sin-mensajes">Error de conexión con el servidor</div>';
+                container.innerHTML = '<div class="sin-mensajes">Error de conexión</div>';
             }
         });
 }
@@ -86,26 +79,22 @@ function agregarMensaje(msg, autoScroll = true) {
     const container = document.getElementById('mensajes');
     if (!container) return;
 
-    // Remover mensaje de "sin mensajes" si existe
     const sinMensajes = container.querySelector('.sin-mensajes');
     if (sinMensajes) {
         sinMensajes.remove();
     }
 
-    // Obtener el nombre del usuario actual
     const usuarioActual = document.getElementById('usuario').value.trim();
     
     const div = document.createElement('div');
     
-    // Si es el usuario actual, va a la derecha (usuario-1)
-    // Si es otro usuario, va a la izquierda (usuario-2)
+    // mensajes del usuario actual van a la derecha
     if (usuarioActual && msg.usuario === usuarioActual) {
-        div.className = 'mensaje usuario-1'; // Derecha
+        div.className = 'mensaje usuario-1';
     } else {
-        div.className = 'mensaje usuario-2'; // Izquierda
+        div.className = 'mensaje usuario-2';
     }
     
-    // Formatear timestamp a hora 
     const fecha = new Date(msg.timestamp);
     const tiempo = fecha.toLocaleTimeString('es-PE', {
         hour: 'numeric',
@@ -133,10 +122,14 @@ function enviarMensaje(event) {
     
     const usuario = document.getElementById('usuario').value.trim();
     const mensaje = document.getElementById('mensaje').value.trim();
+    const mensajeInput = document.getElementById('mensaje');
     
     if (!usuario || !mensaje) {
         return false;
     }
+    
+    mensajeInput.value = '';
+    mensajeInput.disabled = true;
     
     const data = {
         usuario: usuario,
@@ -152,34 +145,29 @@ function enviarMensaje(event) {
     })
     .then(response => response.json())
     .then(data => {
+        mensajeInput.disabled = false;
+        
         if (data.error) {
-            console.error('Error:', data.error);
-            alert('Error al enviar mensaje: ' + data.error);
+            mensajeInput.value = mensaje;
             return;
         }
         
-        document.getElementById('mensaje').value = '';
-        // Si Pusher no está habilitado, recargar mensajes manualmente
         if (!pusherEnabled) {
-            cargarMensajes();
+            setTimeout(cargarMensajes, 100);
         }
     })
     .catch(error => {
-        console.error('Error de envío:', error);
-        alert('Error de conexión al enviar mensaje');
+        mensajeInput.disabled = false;
+        mensajeInput.value = mensaje;
     });
     
     return false;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Cargar mensajes iniciales
     cargarMensajes();
-    
-    // Inicializar Pusher para tiempo real
     initializePusher();
     
-    // Manejar Enter en el campo de mensaje
     document.getElementById('mensaje').addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -188,7 +176,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Limpiar conexión de Pusher al cerrar la página
 window.addEventListener('beforeunload', function() {
     if (pusher) {
         pusher.disconnect();
