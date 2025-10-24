@@ -42,7 +42,7 @@ async function initializePusher() {
     if (!pusherEnabled) {
         console.log('📡 Usando modo polling para actualizaciones');
         cargarMensajes();
-        setInterval(cargarMensajes, 3000);
+        setInterval(cargarMensajes, 1000); // Reducido a 1 segundo para mayor velocidad
     } else {
         // Cargar mensajes iniciales
         cargarMensajes();
@@ -138,11 +138,27 @@ function enviarMensaje(event) {
         return false;
     }
     
+    // Limpiar el campo de mensaje inmediatamente para mejor UX
+    document.getElementById('mensaje').value = '';
+    
+    // Mostrar mensaje inmediatamente (UI optimista)
+    const mensajeOptimista = {
+        usuario: usuario,
+        mensaje: mensaje,
+        timestamp: new Date().toISOString()
+    };
+    
+    // Solo agregar optimísticamente si Pusher no está habilitado
+    if (!pusherEnabled) {
+        agregarMensaje(mensajeOptimista);
+    }
+    
     const data = {
         usuario: usuario,
         mensaje: mensaje
     };
     
+    // Envío asíncrono sin bloquear la UI
     fetch(`${API_BASE_URL}/api/send`, {
         method: 'POST',
         headers: {
@@ -155,18 +171,23 @@ function enviarMensaje(event) {
         if (data.error) {
             console.error('Error:', data.error);
             alert('Error al enviar mensaje: ' + data.error);
+            // Si hay error y no hay Pusher, recargar para mostrar estado correcto
+            if (!pusherEnabled) {
+                cargarMensajes();
+            }
             return;
         }
         
-        document.getElementById('mensaje').value = '';
-        // Si Pusher no está habilitado, recargar mensajes manualmente
-        if (!pusherEnabled) {
-            cargarMensajes();
-        }
+        // Si Pusher está habilitado, no necesitamos hacer nada más
+        // El mensaje llegará via WebSocket
     })
     .catch(error => {
         console.error('Error de envío:', error);
         alert('Error de conexión al enviar mensaje');
+        // Si hay error y no hay Pusher, recargar para mostrar estado correcto
+        if (!pusherEnabled) {
+            cargarMensajes();
+        }
     });
     
     return false;
