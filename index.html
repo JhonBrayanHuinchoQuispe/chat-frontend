@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat en Tiempo Real</title>
+    <link rel="stylesheet" href="static/css/style.css?v=20251019234500">
+    <link rel="icon" href="static/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="contenedor-chat">
+        <div class="encabezado">
+             <h1>Chat en Tiempo Real</h1>
+         </div>
+        
+        <div id="mensajes" class="area-mensajes">
+        </div>
+        
+        <div class="area-entrada">
+            <form onsubmit="return enviarMensaje(event);">
+                <div class="fila-entrada">
+                    <input type="text" id="usuario" placeholder="Tu nombre" required>
+                    <textarea id="mensaje" placeholder="Escribe un mensaje..." required></textarea>
+                    <button type="submit" class="btn btn-primario">Enviar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pusher JS -->
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="static/js/chat.js"></script>
+</body>
+</html>
