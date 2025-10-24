@@ -38,11 +38,11 @@ async function initializePusher() {
         pusherEnabled = false;
     }
     
-    // Si Pusher no está habilitado o falló, usar polling más rápido
+    // Si Pusher no está habilitado o falló, usar polling
     if (!pusherEnabled) {
         console.log('📡 Usando modo polling para actualizaciones');
         cargarMensajes();
-        setInterval(cargarMensajes, 1000); // Reducido de 3000ms a 1000ms
+        setInterval(cargarMensajes, 3000);
     } else {
         // Cargar mensajes iniciales
         cargarMensajes();
@@ -138,15 +138,11 @@ function enviarMensaje(event) {
         return false;
     }
     
-    // Limpiar el campo inmediatamente para mejor UX
-    document.getElementById('mensaje').value = '';
-    
     const data = {
         usuario: usuario,
         mensaje: mensaje
     };
     
-    // Envío optimizado con timeout reducido
     fetch(`${API_BASE_URL}/api/send`, {
         method: 'POST',
         headers: {
@@ -154,30 +150,22 @@ function enviarMensaje(event) {
         },
         body: JSON.stringify(data)
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.error) {
             console.error('Error:', data.error);
-            // Restaurar mensaje si hay error
-            document.getElementById('mensaje').value = mensaje;
             alert('Error al enviar mensaje: ' + data.error);
             return;
         }
         
-        // Si Pusher no está habilitado, recargar mensajes inmediatamente
+        document.getElementById('mensaje').value = '';
+        // Si Pusher no está habilitado, recargar mensajes manualmente
         if (!pusherEnabled) {
-            setTimeout(cargarMensajes, 100); // Recarga casi inmediata
+            cargarMensajes();
         }
     })
     .catch(error => {
         console.error('Error de envío:', error);
-        // Restaurar mensaje si hay error de conexión
-        document.getElementById('mensaje').value = mensaje;
         alert('Error de conexión al enviar mensaje');
     });
     
