@@ -95,7 +95,13 @@ function agregarMensaje(msg, autoScroll = true) {
         div.className = 'mensaje usuario-2';
     }
     
-    const tiempo = msg.timestamp;
+    // Usar la hora local del navegador en lugar del timestamp del backend
+    const ahora = new Date();
+    const tiempo = ahora.toLocaleTimeString('es-PE', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+    });
     
     div.innerHTML = `
         <div class="contenido-mensaje-wrapper">
