@@ -1,5 +1,5 @@
-// Configuración de la API - Cambiar esta URL por la de tu backend en Render
-const API_BASE_URL = 'https://tu-backend-render.onrender.com'; // Cambiar por tu URL de Render
+// Configuración de la API - URL del backend en Render
+const API_BASE_URL = 'https://chat-backend-python-sistemasic.onrender.com'; // URL de tu backend en Render
 
 let usuariosColores = {};
 let contadorUsuarios = 0;
